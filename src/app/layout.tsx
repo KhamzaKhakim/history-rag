@@ -3,7 +3,7 @@ import { Geist, Geist_Mono, Noto_Sans } from "next/font/google";
 import "./globals.css";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 
 const notoSans = Noto_Sans({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -39,9 +39,9 @@ export default function RootLayout({
         notoSans.variable,
       )}
     >
-      <body className="min-h-full">
+      <body className="flex min-h-screen flex-col">
         <Header />
-        {children}
+        <main className="flex-1 min-h-0">{children}</main>
         <Footer />
       </body>
     </html>
