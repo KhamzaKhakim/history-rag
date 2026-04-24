@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
+import { parseAsString, useQueryState } from "nuqs";
 
 const YEARS = Array.from({ length: 200 }, (_, i) => 1800 + i);
 const ITEM_H = 40;
@@ -23,40 +24,27 @@ function YearRow({
   const tickW = isSelected ? 40 : isCentury ? 35 : isDecade ? 30 : 20;
   const fontSize = Math.max(10, 28 - dist * 2.2);
   const opacity = Math.max(0.5, 1 - dist * 0.14);
-  const color = isSelected ? "black" : `rgba(120,120,120,${opacity})`;
+  const color = isSelected ? "rgba(0,0,0,1)" : `rgba(120,120,120,${opacity})`;
 
   return (
-    <div
-      style={{
-        height: `${ITEM_H}px`,
-        display: "flex",
-        alignItems: "center",
-        paddingLeft: "16px",
-        gap: "10px",
-      }}
-    >
+    <div className="flex items-center h-10 gap-2.5 pl-2">
       <motion.div
         animate={{
           width: tickW,
           height: isSelected ? 3 : 1,
           background: color,
         }}
-        transition={{ duration: 0.14 }}
-        style={{ flexShrink: 0 }}
+        transition={{ duration: 0.15 }}
       />
       <motion.span
+        initial={{ fontWeight: 400 }}
         animate={{
           fontSize,
           color,
           letterSpacing: isSelected ? "0.04em" : "0.01em",
         }}
-        transition={{ duration: 0.14 }}
-        style={{
-          fontWeight: isSelected ? 700 : 400,
-          lineHeight: 1,
-          whiteSpace: "nowrap",
-          fontFamily: "'Courier New', monospace",
-        }}
+        transition={{ duration: 0.15 }}
+        style={{ fontWeight: isSelected ? 700 : 400 }}
       >
         {year}
       </motion.span>
@@ -65,55 +53,41 @@ function YearRow({
 }
 
 export default function TimeLine() {
+  const [year, setYear] = useQueryState(
+    "year",
+    parseAsString.withDefault("1850"),
+  );
+
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState(100);
+
+  const selectedIndex = YEARS.findIndex((y) => y === Number(year));
 
   useEffect(() => {
-    if (scrollRef) {
-      const el = scrollRef.current;
-      if (el) el.scrollTop = selectedIndex * ITEM_H;
-    }
-  }, []);
+    const el = scrollRef.current;
+    const idx = YEARS.findIndex((y) => y === Number(year));
+    if (el) el.scrollTop = idx * ITEM_H;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const idx = Math.round(el.scrollTop / ITEM_H);
-    setSelectedIndex(Math.max(0, Math.min(YEARS.length - 1, idx)));
-  }, []);
+    const clamped = YEARS[Math.max(0, Math.min(YEARS.length - 1, idx))];
+    setYear(String(clamped));
+  }, [setYear]);
 
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        position: "relative",
-        overflow: "hidden",
-        fontFamily: "'Courier New', monospace",
-      }}
-    >
+    <div className="h-screen flex relative overflow-hidden font-mono">
       <div
         ref={scrollRef}
         onScroll={onScroll}
-        style={{
-          width: "210px",
-          overflowY: "scroll",
-          flexShrink: 0,
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-          zIndex: 2,
-        }}
+        className="w-50 overflow-y-scroll shrink-0 z-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        <div style={{ height: "50vh" }} />
-        {YEARS.map((year, i) => (
-          <YearRow
-            key={year}
-            year={year}
-            index={i}
-            selectedIndex={selectedIndex}
-          />
+        <div className="h-[50vh]" />
+        {YEARS.map((y, i) => (
+          <YearRow key={y} year={y} index={i} selectedIndex={selectedIndex} />
         ))}
-        <div style={{ height: "50vh" }} />
+        <div className="h-[50vh]" />
       </div>
     </div>
   );
